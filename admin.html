@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>SaaS License Manager</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1a1b1e; color: #fff; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        .card { background: #25262b; padding: 25px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #373a40; }
+        h2 { margin-top: 0; color: #fff; border-bottom: 1px solid #373a40; padding-bottom: 10px; font-size: 20px; }
+        .sub-text { font-size: 13px; color: #868e96; margin-top: -5px; margin-bottom: 20px; display: block; }
+        
+        select, input { background: #141517; color: white; border: 1px solid #373a40; padding: 10px; border-radius: 5px; margin-right: 10px; }
+        button { background: #3b5bdb; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #4c6ef5; }
+        .btn-danger { background: #e03131; }
+        
+        /* สไตล์ของปุ่ม Toggle Switch */
+        .toggle-container { display: flex; align-items: center; margin-bottom: 20px; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; margin-right: 10px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #141517; transition: .4s; border-radius: 24px; border: 1px solid #373a40; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #3b5bdb; border-color: #3b5bdb; }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .toggle-label { color: #868e96; font-size: 14px; font-weight: bold; }
+
+        /* สไตล์กรอบ Credentials */
+        .cred-box { background: #141517; border: 1px solid #373a40; padding: 15px; border-radius: 8px; margin-bottom: 15px; position: relative; }
+        .cred-label { font-size: 11px; color: #868e96; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .cred-value { font-family: monospace; font-size: 16px; color: #e9ecef; word-break: break-all; }
+        
+        /* สไตล์กรอบ Code Snippet */
+        .snippet-box { background: #141517; border: 1px solid #373a40; padding: 20px; border-radius: 8px; margin-top: 15px; position: relative; }
+        pre { margin: 0; font-family: 'Consolas', 'Courier New', monospace; font-size: 14px; color: #a5d8ff; white-space: pre-wrap; word-wrap: break-word; }
+        .lang-selector { margin-bottom: 15px; display: flex; align-items: center; }
+        .lang-selector label { margin-right: 10px; color: #868e96; font-size: 14px; }
+        
+        /* เอฟเฟกต์เบลอข้อความ */
+        .blur-text { filter: blur(6px); transition: filter 0.3s ease; cursor: pointer; user-select: none; }
+        .blur-text:hover { filter: blur(0px); user-select: text; }
+
+        /* สไตล์ปุ่ม Copy */
+        .copy-btn { position: absolute; top: 15px; right: 15px; background: transparent; border: none; color: #868e96; cursor: pointer; padding: 0; transition: color 0.2s; }
+        .copy-btn:hover { color: #fff; }
+        .copy-btn svg { width: 18px; height: 18px; }
+        .copy-code-btn { display: flex; align-items: center; gap: 8px; background: #25262b; border: 1px solid #373a40; color: #fff; padding: 8px 12px; border-radius: 5px; margin-top: 15px; font-size: 13px; font-weight: normal; }
+        .copy-code-btn:hover { background: #373a40; }
+
+        /* 🌟 สไตล์ Modal สร้างแอปใหม่ 🌟 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+            opacity: 0; visibility: hidden; transition: 0.2s ease;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        
+        .modal-content {
+            background: #1e1e1e;
+            width: 450px;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border: 1px solid #2d2d2d;
+            transform: translateY(20px); transition: 0.3s ease;
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        
+        .modal-content h3 { margin-top: 0; margin-bottom: 25px; font-size: 18px; color: #fff; border: none; padding: 0; }
+        .modal-content .input-group { margin-bottom: 15px; }
+        .modal-content input {
+            width: 100%; box-sizing: border-box;
+            background: #111111; border: 1px solid #2d2d2d;
+            padding: 14px; border-radius: 6px; color: #fff; font-size: 14px; margin: 0;
+        }
+        .modal-content input:focus { border-color: #2f5bed; outline: none; }
+        .modal-content .helper-text { font-size: 12px; color: #6b6b6b; margin-top: 5px; display: block; margin-bottom: 25px; }
+        
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
+        .modal-btn-cancel { background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .modal-btn-cancel:hover { background: #e0e0e0; }
+        .modal-btn-create { background: #2f5bed; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .modal-btn-create:hover { background: #1c45d3; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #373a40; }
+        th { color: #868e96; }
+        .badge { padding: 4px 8px; border-radius: 5px; font-size: 12px; }
+        .badge.active { background: #2b8a3e; }
+        .badge.banned { background: #c92a2a; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <select id="appSelector" onchange="loadAppDetails()"></select>
+                <button onclick="openCreateModal()">➕ สร้างแอปพลิเคชันใหม่</button>
+            </div>
+            <button class="btn-danger" onclick="logout()">🚪 ออกจากระบบ</button>
+        </div>
+
+        <div class="card" id="credentialsCard" style="display: none;">
+            <h2>Application Credentials</h2>
+            <span class="sub-text">Simply replace the placeholder code in the example with these</span>
+            
+            <div class="toggle-container">
+                <label class="switch">
+                    <input type="checkbox" id="snippetToggle" onchange="toggleView()">
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Display Code Snippet</span>
+            </div>
+
+            <div id="normalView">
+                <div class="cred-box">
+                    <button class="copy-btn" onclick="copyText('credName', this)" title="คัดลอก"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+                    <div class="cred-label">Application Name</div>
+                    <div class="cred-value blur-text" id="credName">-</div>
+                </div>
+                <div class="cred-box">
+                    <button class="copy-btn" onclick="copyText('credOwner', this)" title="คัดลอก"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+                    <div class="cred-label">Account Owner ID</div>
+                    <div class="cred-value blur-text" id="credOwner">-</div>
+                </div>
+                <div class="cred-box">
+                    <button class="copy-btn" onclick="copyText('credSecret', this)" title="คัดลอก"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+                    <div class="cred-label">Application Secret</div>
+                    <div class="cred-value blur-text" id="credSecret">-</div>
+                </div>
+                <div class="cred-box">
+                    <button class="copy-btn" onclick="copyText('credVersion', this)" title="คัดลอก"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+                    <div class="cred-label">Application Version</div>
+                    <div class="cred-value" id="credVersion">-</div>
+                </div>
+            </div>
+
+            <div id="snippetView" style="display: none;">
+                <div class="lang-selector">
+                    <label>Select Language:</label>
+                    <select id="langSelect" onchange="generateSnippet()" style="width: 200px;">
+                        <option value="C#">C#</option>
+                        <option value="C++">C++</option>
+                        <option value="Python" selected>Python</option>
+                        <option value="JavaScript">JavaScript</option>
+                        <option value="PHP">PHP</option>
+                    </select>
+                </div>
+                <div class="snippet-box">
+                    <pre id="codeBlock">Loading...</pre>
+                </div>
+                <button class="copy-code-btn" id="btnCopyCode" onclick="copySnippet()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy Code</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="card" id="variablesCard" style="display: none; border-left: 4px solid #fcc419;">
+            <h2>🌐 ตัวแปรฝั่งเซิร์ฟเวอร์ (Server-Side Variables)</h2>
+            <span class="sub-text">ค่าเหล่านี้จะส่งไปให้ Client "เฉพาะตอนที่ผู้ใช้ใส่คีย์ถูกต้องเท่านั้น" (ป้องกันแคร็กเกอร์ข้ามการเช็คคีย์)</span>
+            
+            <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+                <input type="text" id="varName" placeholder="ชื่อตัวแปร (เช่น DOWNLOAD_URL)" style="width: 250px;">
+                <input type="text" id="varValue" placeholder="ค่าที่ต้องการส่งไป (เช่น https://...)" style="flex-grow: 1;">
+                <button onclick="addVariable()">➕ เพิ่มตัวแปร</button>
+            </div>
+
+            <table>
+                <thead><tr><th>ชื่อตัวแปร (Key)</th><th>ค่าที่เก็บไว้ (Value)</th><th style="width: 80px;">จัดการ</th></tr></thead>
+                <tbody id="varList"></tbody>
+            </table>
+        </div>
+
+        <div class="card" id="keysCard" style="display: none;">
+            <h2>🛡️ สร้างและจัดการคีย์</h2>
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="keyPrefix" placeholder="Prefix (เช่น VIP)">
+                <input type="number" id="keyDays" placeholder="วัน" value="30" style="width: 80px;">
+                <button onclick="generateKey()">⚡ สร้างคีย์ใหม่</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>License Key</th>
+                        <th>สถานะ</th>
+                        <th>HWID</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="keyTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="createAppModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Create New Application</h3>
+            
+            <div class="input-group">
+                <input type="text" id="modalAppName" placeholder="Application name" autocomplete="off">
+            </div>
+            
+            <div class="input-group">
+                <input type="text" id="modalAppVersion" placeholder="Application version (e.g. 1.0)" autocomplete="off" value="1.0">
+            </div>
+            <span class="helper-text">Setup your initial application configuration</span>
+            
+            <div class="modal-actions">
+                <button class="modal-btn-cancel" onclick="closeCreateModal()">Cancel</button>
+                <button class="modal-btn-create" onclick="submitNewApp()">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentApps = [];
+        let selectedAppId = null;
+
+        document.addEventListener('DOMContentLoaded', fetchApps);
+
+        async function fetchApps() {
+            const res = await fetch('/api/apps');
+            const data = await res.json();
+            currentApps = data.apps;
+            
+            const selector = document.getElementById('appSelector');
+            selector.innerHTML = '<option value="">-- เลือกแอปพลิเคชัน --</option>';
+            
+            data.apps.forEach(app => {
+                selector.innerHTML += `<option value="${app.id}">${app.name} (v${app.version})</option>`;
+            });
+
+            if(currentApps.length > 0) {
+                selector.value = currentApps[0].id;
+                loadAppDetails();
+            }
+        }
+
+        function openCreateModal() {
+            document.getElementById('modalAppName').value = '';
+            document.getElementById('modalAppVersion').value = '1.0';
+            document.getElementById('createAppModal').classList.add('active');
+        }
+
+        function closeCreateModal() { document.getElementById('createAppModal').classList.remove('active'); }
+
+        async function submitNewApp() {
+            const name = document.getElementById('modalAppName').value.trim();
+            const version = document.getElementById('modalAppVersion').value.trim();
+            if (!name || !version) return alert("Please enter application name and version.");
+            
+            await fetch('/api/apps/create', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name, version }) });
+            closeCreateModal(); fetchApps(); 
+        }
+
+        function loadAppDetails() {
+            selectedAppId = document.getElementById('appSelector').value;
+            if (!selectedAppId) {
+                document.getElementById('credentialsCard').style.display = 'none';
+                document.getElementById('variablesCard').style.display = 'none';
+                document.getElementById('keysCard').style.display = 'none';
+                return;
+            }
+
+            const app = currentApps.find(a => a.id === selectedAppId);
+            document.getElementById('credName').innerText = app.name;
+            document.getElementById('credOwner').innerText = app.owner_id;
+            document.getElementById('credSecret').innerText = app.secret;
+            document.getElementById('credVersion').innerText = app.version;
+
+            document.getElementById('credentialsCard').style.display = 'block';
+            document.getElementById('variablesCard').style.display = 'block'; // 🆕 เปิดการ์ดตัวแปร
+            document.getElementById('keysCard').style.display = 'block';
+            
+            generateSnippet();
+            fetchKeys();
+            fetchVariables(); // 🆕 โหลดข้อมูลตัวแปร
+        }
+
+        // 🆕 ฟังก์ชันสำหรับจัดการ Server Variables
+        async function fetchVariables() {
+            if(!selectedAppId) return;
+            const res = await fetch(`/api/variables?app_id=${selectedAppId}`);
+            const data = await res.json();
+            const list = document.getElementById('varList');
+            list.innerHTML = '';
+            data.variables.forEach(v => {
+                list.innerHTML += `
+                    <tr>
+                        <td style="font-family: monospace; color: #fcc419; font-weight: bold;">${v.name}</td>
+                        <td style="font-family: monospace; color: #a5d8ff;">${v.value}</td>
+                        <td><button class="btn-danger" style="padding: 5px 10px; font-size: 12px;" onclick="deleteVariable('${v.id}')">ลบ</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function addVariable() {
+            const name = document.getElementById('varName').value;
+            const value = document.getElementById('varValue').value;
+            if(!name || !value) return alert("กรุณากรอกข้อมูลให้ครบ");
+            await fetch('/api/variables/add', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ app_id: selectedAppId, name, value }) });
+            document.getElementById('varName').value = '';
+            document.getElementById('varValue').value = '';
+            fetchVariables();
+        }
+
+        async function deleteVariable(id) {
+            if(!confirm("ต้องการลบตัวแปรนี้?")) return;
+            await fetch('/api/variables/delete', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id }) });
+            fetchVariables();
+        }
+
+        function toggleView() {
+            const isSnippetMode = document.getElementById('snippetToggle').checked;
+            document.getElementById('normalView').style.display = isSnippetMode ? 'none' : 'block';
+            document.getElementById('snippetView').style.display = isSnippetMode ? 'block' : 'none';
+            if (isSnippetMode) generateSnippet();
+        }
+
+        function generateSnippet() {
+            if (!selectedAppId) return;
+            const app = currentApps.find(a => a.id === selectedAppId);
+            const lang = document.getElementById('langSelect').value;
+            let code = "";
+
+            if (lang === "C#") { code = `public static api KeyAuthApp = new api(\n    name: "${app.name}",\n    ownerid: "${app.owner_id}",\n    secret: "${app.secret}",\n    version: "${app.version}"\n);`; } 
+            else if (lang === "C++") { code = `std::string name = "${app.name}";\nstd::string ownerid = "${app.owner_id}";\nstd::string secret = "${app.secret}";\nstd::string version = "${app.version}";`; } 
+            else if (lang === "Python") { code = `APP_NAME = "${app.name}"\nOWNER_ID = "${app.owner_id}"\nAPP_SECRET = "${app.secret}"\nAPP_VERSION = "${app.version}"`; } 
+            else if (lang === "JavaScript") { code = `const AppCredentials = {\n    name: "${app.name}",\n    owner_id: "${app.owner_id}",\n    secret: "${app.secret}",\n    version: "${app.version}"\n};`; } 
+            else if (lang === "PHP") { code = `$name = "${app.name}";\n$ownerid = "${app.owner_id}";\n$secret = "${app.secret}";\n$version = "${app.version}";`; }
+
+            document.getElementById('codeBlock').innerText = code;
+        }
+
+        function copySnippet() {
+            const code = document.getElementById('codeBlock').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.getElementById('btnCopyCode');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><polyline points="20 6 9 17 4 12"></polyline></svg> <span style="color:#4CAF50;">Copied!</span>`;
+                setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
+            });
+        }
+
+        async function fetchKeys() {
+            if (!selectedAppId) return;
+            const res = await fetch(`/api/keys?app_id=${selectedAppId}`);
+            const data = await res.json();
+            const tbody = document.getElementById('keyTableBody');
+            tbody.innerHTML = '';
+            
+            data.keys.forEach(k => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-family: monospace;">${k.key_string}</td>
+                        <td><span class="badge ${k.status === 'active' ? 'active' : 'banned'}">${k.status}</span></td>
+                        <td><small>${k.hwid || 'ยังไม่ผูกเครื่อง'}</small></td>
+                        <td>
+                            <button style="background:#f08c00; padding:5px; font-size:12px;" onclick="action('/api/update-status', {key: '${k.key_string}', status: '${k.status === 'active' ? 'banned' : 'active'}'})">สลับแบน</button>
+                            <button style="background:#9c27b0; padding:5px; font-size:12px;" onclick="action('/api/reset-hwid', {key: '${k.key_string}'})">รีเซ็ตเครื่อง</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function generateKey() {
+            const prefix = document.getElementById('keyPrefix').value;
+            const days = document.getElementById('keyDays').value;
+            await fetch('/api/generate-key', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prefix, days, app_id: selectedAppId }) });
+            fetchKeys();
+        }
+
+        async function action(url, payload) {
+            await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            fetchKeys();
+        }
+
+        async function logout() { await fetch('/api/logout', { method: 'POST' }); window.location.href = '/login'; }
+
+        function copyText(elementId, btnElement) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalIcon = btnElement.innerHTML;
+                btnElement.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                setTimeout(() => { btnElement.innerHTML = originalIcon; }, 1500);
+            });
+        }
+    </script>
+</body>
+</html>
